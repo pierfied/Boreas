@@ -42,7 +42,7 @@ class Catalog:
         return x_samp,y_samp,z_samp
 
     def gen_bounding_box(self,vox_len):
-        """Calculate the box that bounds the catalog."""
+        """Calculate the box that bounds all galaxies in the catalog."""
 
         # Calculate the cartesian coordinates for all galaxies w/ photo_z +/- 5*sigma.
         low_z_photo = self.z_photo - 5*self.z_photo_err
@@ -60,13 +60,13 @@ class Catalog:
         high_z = self.z_unit * high_r
 
         # Calculate the min and max x,y,z values.
-        min_x = np.minimum(low_x.min(),high_x.min())
-        min_y = np.minimum(low_y.min(),high_y.min())
-        min_z = np.minimum(low_z.min(),high_z.min())
+        min_x = min(low_x.min(),high_x.min())
+        min_y = min(low_y.min(),high_y.min())
+        min_z = min(low_z.min(),high_z.min())
 
-        max_x = np.maximum(low_x.max(),high_x.max())
-        max_y = np.maximum(low_y.max(),high_y.max())
-        max_z = np.maximum(low_z.max(),high_z.max())
+        max_x = max(low_x.max(),high_x.max())
+        max_y = max(low_y.max(),high_y.max())
+        max_z = max(low_z.max(),high_z.max())
 
         # Calculate the number of voxels on each side.
         nx = int(ceil((max_x - min_x)/vox_len))
