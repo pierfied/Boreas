@@ -5,6 +5,7 @@ from math import ceil
 class Catalog:
     """Galaxy catalog and relevant functions."""
     def __init__(self,ra,dec,cosmo,z_spec=None,z_photo=None,z_photo_err=None):
+        self.cat_len = len(ra)
         self.ra = ra
         self.dec = dec
         self.cosmo = cosmo
