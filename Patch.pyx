@@ -1,4 +1,5 @@
 import numpy as np
+cimport numpy as np
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm
@@ -19,7 +20,7 @@ class Patch:
 
         self.get_patch_gals()
 
-        self.compute_pdfs()
+        self.compute_stacked_pdfs(1)
 
     def get_patch_gals(self):
         """Determine which galaxies are members of a patch."""
@@ -54,6 +55,98 @@ class Patch:
                                             ra_cos_dec < max_ra_cos_dec))
 
         return self.patch_gals
+
+    def compute_stacked_pdfs(self, z_max=None, double dz=0.05,
+                             int fine_res=100):
+
+        # Set the max redshift to the max from the catalog if not provided.
+        if z_max is None:
+            z_max = self.cat.z_spec[self.patch_gals].max()
+
+        # Compute the bin mids & edges for histogramming.
+        edges = np.arange(0,z_max,dz)
+        mids = edges[:-1] + dz/2
+        cdef int num_bins = len(mids)
+
+        # Compute the fine mids.
+        r_edges = self.cosmo.com_dist(edges)
+        fine_mids = np.zeros(shape=(num_bins,fine_res))
+        cdef int i
+        for i in range(num_bins):
+            fine_edges =  np.linspace(r_edges[i],r_edges[i+1],fine_res+1)
+            dr = fine_edges[1]-fine_edges[0]
+            fine_mids[i,:] = fine_edges[:-1] + dr/2
+
+        # Get the unit vectors for the galaxies in the patch.
+        unit_vec = self.cat.unit_vec[self.patch_gals]
+
+        # Get the redshift information for the galaxies in the patch.
+        cdef np.ndarray z_spec = self.cat.z_spec[self.patch_gals]
+        cdef np.ndarray z_photo = self.cat.z_photo[self.patch_gals]
+        cdef np.ndarray z_photo_err = self.cat.z_photo_err[self.patch_gals]
+
+        # Create the stacked redshift arrays.
+        cdef np.ndarray stacked_photo = np.zeros(shape=num_bins)
+        cdef np.ndarray stacked_photo_w_delta = np.zeros(shape=num_bins)
+
+        # Get map/box properties (unitless) for convenience.
+        cdef double x0 = self.box.x0.value
+        cdef double y0 = self.box.y0.value
+        cdef double z0 = self.box.z0.value
+        cdef int nx = self.box.nx
+        cdef int ny = self.box.ny
+        cdef int nz = self.box.nz
+        cdef double dl = self.box.vox_len.value
+
+        # Compute the distribution contribution of each galaxy in the patch.
+        cdef int j,k
+        cdef np.ndarray x,y,z
+        cdef np.ndarray a,b,c
+        cdef double sum
+        cdef np.ndarray photo_dist, improved_dist
+        cdef np.ndarray delta
+        cdef np.ndarray d_map = self.d_map.map
+        for i in range(len(z_spec)):
+            # Calculate the probability mass of the redshift bins.
+            photo_dist = norm.pdf(mids,z_photo[i],z_photo_err[i]) * dz
+
+            # Add to the stacked photometric redshift distribution.
+            stacked_photo += photo_dist
+
+            # Compute the Cartesian components of the galaxy's line of sight
+            # for various redshifts.
+            x = fine_mids * unit_vec[i,0]
+            y = fine_mids * unit_vec[i,1]
+            z = fine_mids * unit_vec[i,2]
+
+            # Calculate the relevant indices.
+            a = np.floor((x - x0)/dl).astype(np.int32)
+            b = np.floor((y - y0)/dl).astype(np.int32)
+            c = np.floor((z - z0)/dl).astype(np.int32)
+
+            # Compute the average delta values for each bin.
+            delta = np.zeros(shape=num_bins)
+            for j in range(num_bins):
+                sum = 0
+                for k in range(fine_res):
+                    if a[j,k] >= 0 and a[j,k] < nx and b[j,k] >= 0 \
+                        and b[j,k] < ny and c[j,k] >= 0 and c[j,k] < nz:
+                        sum += d_map[a[j,k],b[j,k],c[j,k]]
+                delta[j] = sum/fine_res
+
+            # Calculate the improved pdfs and normalize.
+            improved_dist = photo_dist * (1 + delta)
+            improved_dist *= photo_dist.sum() / improved_dist.sum()
+
+            # Add the improved distribution to the stacked improved.
+            stacked_photo_w_delta += improved_dist
+
+        plt.hist(z_spec,edges)
+        plt.plot(mids,stacked_photo)
+        plt.plot(mids,stacked_photo_w_delta)
+        plt.tight_layout('patch.png')
+        plt.savefig()
+        plt.clf()
 
     def compute_pdfs(self):
 

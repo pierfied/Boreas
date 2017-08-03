@@ -1,4 +1,5 @@
-import pyximport; pyximport.install()
+import numpy
+import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()})
 from Catalog import Catalog
 from OccupancyMap import OccupancyMap
 from astropy.io import fits
