@@ -29,7 +29,7 @@ randoms_cat = Catalog(randoms['RA'],randoms['DEC'],cosmo,randoms['Z'])
 truth_cat = Catalog(truth['RA'],truth['DEC'],cosmo,truth['Z'],truth['ZPHOTO'],truth['ZPHOTO_E'])
 
 # Set the voxel side-length.
-vox_len = 20 * units.Mpc
+vox_len = 20
 
 box = redmagic_cat.gen_bounding_box(vox_len)
 print(box.nx)
@@ -56,32 +56,44 @@ plt.title('redmagic Randoms Occupancy Map')
 plt.xlabel('Voxel Occupancies [%]')
 plt.ylabel('Number of Voxels')
 plt.tight_layout()
-plt.savefig('f_map.png')
+plt.savefig('f_hist.png')
 plt.clf()
 
 d_map = DensityMap(redmagic_cat,cosmo,box,f_map)
 d_map.initialize_spec_map()
+d_map.map[f_map.map < 0.5] = 0
 
 ind = f_map.map > 0.5
 
 print('d_mean: ' + str(d_map.map[ind].mean()))
 
+print('N_mean: ' + str(d_map.N[ind].mean()))
+
 bins = np.arange(0,11)
 h,_ = np.histogram(d_map.N[ind],bins=bins,density=True)
 plt.bar(bins[:-1],h/np.sum(h),width=0.1)
-plt.title('redmagic Number Counts')
+plt.title('redmagic $z_{spec}$ Number Counts')
 plt.xlabel('Number of redmagic Galaxies')
 plt.ylabel('Number of Voxels')
 plt.tight_layout()
-plt.savefig('n_map.png')
+plt.savefig('n_hist.png')
 plt.clf()
 
 plt.hist(d_map.map[ind],bins=50)
-plt.title('redmagic Mean Photo-z Density Map')
+plt.title('redmagic $z_{spec}$ Density Map')
 plt.xlabel('$\delta$')
 plt.ylabel('Number of Voxels')
 plt.tight_layout()
-plt.savefig('d_map.png')
+plt.savefig('d_hist.png')
+plt.clf()
+
+y = np.log(1+d_map.map[ind])
+plt.hist(y[np.isfinite(y)],bins=50)
+plt.title('redmagic $z_{spec}$ y Map')
+plt.xlabel('$\ln(1+\delta)$')
+plt.ylabel('Number of Voxels')
+plt.tight_layout()
+plt.savefig('y_hist.png')
 plt.clf()
 
 plt.hist2d(f_map.map[ind],d_map.N[ind],200)
@@ -96,4 +108,14 @@ plt.tight_layout()
 plt.savefig('2d.png')
 plt.clf()
 
-Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat)
+p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat)
+p.compute_stacked_pdfs('patch_1_sq_deg_a.png',1)
+
+p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat)
+p.compute_stacked_pdfs('patch_1_sq_deg_b.png',1)
+
+p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat)
+p.compute_stacked_pdfs('patch_5_sq_deg_a.png',1)
+
+p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat)
+p.compute_stacked_pdfs('patch_5_sq_deg_b.png',1)

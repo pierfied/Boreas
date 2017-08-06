@@ -19,7 +19,7 @@ class FlatLambdaCDM(cosmology.FlatLambdaCDM):
 
         # Compute the comoving distances for the appropriate redshifts.
         z = np.arange(0,max_z+dz,dz)
-        com_dist = self.comoving_distance(z)
+        com_dist = self.comoving_distance(z).to(units.Mpc)
 
         # Create the interpolators.
         self.z_interp = interpolate.interp1d(com_dist,z)
@@ -33,4 +33,4 @@ class FlatLambdaCDM(cosmology.FlatLambdaCDM):
     def com_dist(self,redshift):
         """Calculate the comoving distances from redshift with units."""
 
-        return self.com_dist_interp(redshift) * units.Mpc
+        return self.com_dist_interp(redshift)

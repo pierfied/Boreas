@@ -17,14 +17,14 @@ class DensityMap:
         # Get the Cartesian coordinates of the photo-z means.
         cart_photo = self.cat.get_cart_photo_mean()
 
-        # Get map/box properties (unitless) for convenience.
-        x0 = self.box.x0.value
-        y0 = self.box.y0.value
-        z0 = self.box.z0.value
+        # Get map/box properties for convenience.
+        x0 = self.box.x0
+        y0 = self.box.y0
+        z0 = self.box.z0
         nx = self.box.nx
         ny = self.box.ny
         nz = self.box.nz
-        dl = self.box.vox_len.value
+        dl = self.box.vox_len
 
         # Compute the map edges for the histogram.
         x_edges = np.linspace(x0,x0+nx*dl,1+nx)
@@ -32,7 +32,7 @@ class DensityMap:
         z_edges = np.linspace(z0,z0+nz*dl,1+nz)
 
         # Compute the number counts.
-        self.map,_ = np.histogramdd(cart_photo.value,(x_edges,y_edges,z_edges))
+        self.map,_ = np.histogramdd(cart_photo,(x_edges,y_edges,z_edges))
         self.N = self.map.copy()
 
         # Adjust the values to account for occupancy fractions.
@@ -50,16 +50,16 @@ class DensityMap:
         """Initialize the density map to those from the mean photo-z values."""
 
         # Get the Cartesian coordinates of the photo-z means.
-        cart_photo = self.cat.get_cart_spec()
+        cart_spec = self.cat.get_cart_spec()
 
-        # Get map/box properties (unitless) for convenience.
-        x0 = self.box.x0.value
-        y0 = self.box.y0.value
-        z0 = self.box.z0.value
+        # Get map/box properties for convenience.
+        x0 = self.box.x0
+        y0 = self.box.y0
+        z0 = self.box.z0
         nx = self.box.nx
         ny = self.box.ny
         nz = self.box.nz
-        dl = self.box.vox_len.value
+        dl = self.box.vox_len
 
         # Compute the map edges for the histogram.
         x_edges = np.linspace(x0,x0+nx*dl,1+nx)
@@ -67,14 +67,13 @@ class DensityMap:
         z_edges = np.linspace(z0,z0+nz*dl,1+nz)
 
         # Compute the number counts.
-        self.map,_ = np.histogramdd(cart_photo.value,(x_edges,y_edges,z_edges))
+        self.map,_ = np.histogramdd(cart_spec,(x_edges,y_edges,z_edges))
         self.N = self.map.copy()
 
         # Adjust the values to account for occupancy fractions.
         self.map /= np.minimum(1,self.occ_map.map)
 
         # Compute the delta values.
-        rand_ratio = self.cat.cat_len / self.occ_map.cat.cat_len
         expected_N = self.map[self.occ_map.map > 0.5].mean()
         self.map = self.map/expected_N - 1
 
