@@ -46,6 +46,28 @@ class DensityMap:
 
         return self.map
 
+    def regularize(self):
+        ind = self.occ_map.map > 0.5
+
+        delta = self.map.copy()
+        y = np.log(1 + delta)
+        y[delta == 0] = -2
+
+        ind2 = np.logical_and(ind,np.isfinite(y))
+        mean = y[ind2].mean()
+
+        a = 0.5
+        b = 0.1
+        weights = 1/(1+np.exp(-(self.occ_map.map - a)/b))
+
+        y = y * weights + mean * (1-weights)
+
+        d = np.exp(y) - 1
+
+        d[np.logical_not(ind2)] = mean
+
+        self.map = d
+
     def initialize_spec_map(self):
         """Initialize the density map to those from the mean photo-z values."""
 

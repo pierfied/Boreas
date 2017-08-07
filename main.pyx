@@ -14,9 +14,6 @@ from Patch import Patch
 # Define the cosmology.
 cosmo = FlatLambdaCDM(H0=70,Om0=0.286)
 
-#print(cosmo.com_dist(1))
-#exit(0)
-
 # Load the data.
 redmagic = fits.open('/calvin1/pierfied/sim/Asteria/data/redmagic.fit')[1].data
 randoms = fits.open('/calvin1/pierfied/sim/Asteria/data/randoms.fit')[1].data
@@ -61,7 +58,6 @@ plt.clf()
 
 d_map = DensityMap(redmagic_cat,cosmo,box,f_map)
 d_map.initialize_spec_map()
-d_map.map[f_map.map < 0.5] = 0
 
 ind = f_map.map > 0.5
 
@@ -79,7 +75,7 @@ plt.tight_layout()
 plt.savefig('n_hist.png')
 plt.clf()
 
-plt.hist(d_map.map[ind],bins=50)
+plt.hist(d_map.map[ind],bins=100,range=(-1,5))
 plt.title('redmagic $z_{spec}$ Density Map')
 plt.xlabel('$\delta$')
 plt.ylabel('Number of Voxels')
@@ -96,6 +92,26 @@ plt.tight_layout()
 plt.savefig('y_hist.png')
 plt.clf()
 
+d_map.map[f_map.map < 0.5] = 0
+#d_map.regularize()
+
+plt.hist(d_map.map[ind],bins=100,range=(-1,5))
+plt.title('redmagic $z_{spec}$ Density Map (Regularized)')
+plt.xlabel('$\delta$')
+plt.ylabel('Number of Voxels')
+plt.tight_layout()
+plt.savefig('d_reg_hist.png')
+plt.clf()
+
+y = np.log(1+d_map.map[ind])
+plt.hist(y[np.isfinite(y)],bins=50)
+plt.title('redmagic $z_{spec}$ y Map (Regularized)')
+plt.xlabel('$\ln(1+\delta)$')
+plt.ylabel('Number of Voxels')
+plt.tight_layout()
+plt.savefig('y_reg_hist.png')
+plt.clf()
+
 plt.hist2d(f_map.map[ind],d_map.N[ind],200)
 plt.colorbar()
 plt.tight_layout()
@@ -108,14 +124,20 @@ plt.tight_layout()
 plt.savefig('2d.png')
 plt.clf()
 
-p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat)
+d_map.map /= 1.5
+
+p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,214211)
+print(p.center_gal)
 p.compute_stacked_pdfs('patch_1_sq_deg_a.png',1)
 
-p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat)
+p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,382063)
+print(p.center_gal)
 p.compute_stacked_pdfs('patch_1_sq_deg_b.png',1)
 
-p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat)
+p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat,103970)
+print(p.center_gal)
 p.compute_stacked_pdfs('patch_5_sq_deg_a.png',1)
 
-p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat)
+p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat,165208)
+print(p.center_gal)
 p.compute_stacked_pdfs('patch_5_sq_deg_b.png',1)
