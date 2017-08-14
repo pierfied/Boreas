@@ -37,6 +37,7 @@ class DensityMap:
 
         # Adjust the values to account for occupancy fractions.
         self.map /= np.minimum(1,self.occ_map.map)
+        self.N2 = self.map.copy()
 
         # Compute the delta values.
         rand_ratio = self.cat.cat_len / self.occ_map.cat.cat_len
@@ -47,11 +48,11 @@ class DensityMap:
         return self.map
 
     def regularize(self):
-        ind = self.occ_map.map > 0.5
+        ind = self.occ_map.map > 0.9
 
         delta = self.map.copy()
         y = np.log(1 + delta)
-        y[delta == 0] = -2
+        y[delta == -1] = -3
 
         ind2 = np.logical_and(ind,np.isfinite(y))
         mean = y[ind2].mean()
@@ -64,7 +65,7 @@ class DensityMap:
 
         d = np.exp(y) - 1
 
-        d[np.logical_not(ind2)] = mean
+        d[np.logical_not(np.isfinite(y))] = mean
 
         self.map = d
 
@@ -94,6 +95,7 @@ class DensityMap:
 
         # Adjust the values to account for occupancy fractions.
         self.map /= np.minimum(1,self.occ_map.map)
+        self.N2 = self.map.copy()
 
         # Compute the delta values.
         expected_N = self.map[self.occ_map.map > 0.5].mean()

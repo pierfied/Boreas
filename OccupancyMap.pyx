@@ -19,8 +19,8 @@ class OccupancyMap:
         # Create the bins for the number counts calculations.
         min_z = np.min(self.cat.z_spec)
         max_z = np.max(self.cat.z_spec)
-        mid_z = np.arange(min_z+0.5*dz, max_z, dz)
         edges = np.arange(min_z, max_z+dz, dz)
+        mid_z = edges[:-1] + 0.5*dz
 
         # Compute the histogram of the counts.
         N,_ = np.histogram(self.cat.z_spec, edges)
