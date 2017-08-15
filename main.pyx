@@ -1,4 +1,5 @@
-import pyximport; pyximport.install()
+import numpy
+import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()})
 from Catalog import Catalog
 from OccupancyMap import OccupancyMap
 from astropy.io import fits
@@ -8,6 +9,7 @@ import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from DensityMap import DensityMap
 from Patch import Patch
+from HMCMapSampler import HMCMapSampler
 
 # Define the cosmology.
 cosmo = FlatLambdaCDM(H0=70,Om0=0.286)
@@ -92,18 +94,21 @@ plt.clf()
 d_map.map /= 1.5
 
 # Create some patches.
-p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,214211)
-print(p.center_gal)
-p.compute_stacked_pdfs('patch_1_sq_deg_a.png',1)
+# p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,214211)
+# print(p.center_gal)
+# p.compute_stacked_pdfs('patch_1_sq_deg_a.png',1)
+#
+# p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,382063)
+# print(p.center_gal)
+# p.compute_stacked_pdfs('patch_1_sq_deg_b.png',1)
+#
+# p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat,103970)
+# print(p.center_gal)
+# p.compute_stacked_pdfs('patch_5_sq_deg_a.png',1)
+#
+# p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat,165208)
+# print(p.center_gal)
+# p.compute_stacked_pdfs('patch_5_sq_deg_b.png',1)
 
-p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,382063)
-print(p.center_gal)
-p.compute_stacked_pdfs('patch_1_sq_deg_b.png',1)
-
-p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat,103970)
-print(p.center_gal)
-p.compute_stacked_pdfs('patch_5_sq_deg_a.png',1)
-
-p = Patch(truth_cat,d_map,cosmo,box,5,redmagic_cat,165208)
-print(p.center_gal)
-p.compute_stacked_pdfs('patch_5_sq_deg_b.png',1)
+sampler = HMCMapSampler(redmagic_cat,box,f_map_truth,d_map_truth)
+sampler.sample()
