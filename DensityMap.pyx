@@ -98,7 +98,7 @@ class DensityMap:
         self.N2 = self.map.copy()
 
         # Compute the delta values.
-        expected_N = self.map[self.occ_map.map > 0.5].mean()
-        self.map = self.map/expected_N - 1
+        self.expected_N = self.map[self.occ_map.map > 0.5].mean()
+        self.map = self.map/self.expected_N - 1
 
         return self.map

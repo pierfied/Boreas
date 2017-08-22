@@ -9,7 +9,8 @@ import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from DensityMap import DensityMap
 from Patch import Patch
-from HMCMapSampler import HMCMapSampler
+import NeighborMapSampler as NMS
+from NeighborMapSampler import NeighborMapSampler
 
 # Define the cosmology.
 cosmo = FlatLambdaCDM(H0=70,Om0=0.286)
@@ -110,5 +111,29 @@ d_map.map /= 1.5
 # print(p.center_gal)
 # p.compute_stacked_pdfs('patch_5_sq_deg_b.png',1)
 
-sampler = HMCMapSampler(redmagic_cat,box,f_map_truth,d_map_truth)
-sampler.sample()
+# Calculate the y-map for the truth catalog and adjust for redmagic bias.
+bias = 1.5
+y_map_truth = np.log(1+np.maximum(-1,d_map_truth.map * bias))
+
+# Deal with empty pixels and set low occupancy pixels to the mean.
+y_map_truth[np.isinf(y_map_truth)] = -5
+y_map_truth[f_map_truth.map < 0.5] = y_map_truth[f_map_truth.map > 0.5].mean()
+
+print(y_map_truth)
+print(y_map_truth[f_map_truth.map > 0.5])
+
+print(NMS.compute_neighbor_covariances(y_map_truth,f_map_truth.map))
+print(y_map_truth[f_map_truth.map > 0.5].var())
+
+mu = y_map_truth[f_map_truth.map > 0.5].mean()
+cov = NMS.compute_neighbor_covariances(y_map_truth,f_map_truth.map)
+
+print(d_map_truth.N.dtype)
+print(NMS.lf(0))
+print(NMS.lf(int(5)))
+print(NMS.lf(float(5)))
+
+print(NMS.compute_log_prob(y_map_truth,d_map_truth.N,f_map_truth.map,mu,cov,float(d_map_truth.expected_N)))
+exit(0)
+
+sampler = NeighborMapSampler(redmagic_cat,box,f_map_truth,y_map_truth,None)
