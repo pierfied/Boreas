@@ -23,7 +23,7 @@ class NeighborMapSampler(HMCMapSampler):
 def compute_log_prob(y_map,N,f_map,mu,cov,expected_N):
     return compute_log_prob_c(y_map,N,f_map,mu,cov,expected_N)
 
-cdef double compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
+cdef object compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
                              double mu, np.ndarray cov, double expected_N):
 
     # Get the shape of the array.
@@ -31,19 +31,28 @@ cdef double compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
     cdef int ny = y_map.shape[1]
     cdef int nz = y_map.shape[2]
 
+    # Compute the values for the inverse covariance matrix.
+    inv_cov = cov / (cov[0] ** 2)
+    inv_cov[1:] *= -1
+
     cdef int i,j,k
     cdef int a,b,c
     cdef int num_off
     cdef double log_gaussian = 0
     cdef double log_poisson = 0
     cdef double gaussian_j, lambda_k
-    cdef np.ndarray grad = np.zeros(shape=nx*ny*nz)
+    cdef np.ndarray grad = np.zeros(shape=[nx,ny,nz])
     # Loop over all voxels.
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
-                gaussian_j = 0
 
+                # Only allow voxels with reasonable occupancy
+                # to contribute to the likelihood.
+                if f_map[i,j,k] < 0.5:
+                    continue
+
+                gaussian_j = 0
                 # Loop over all neighbors.
                 for a in range(-1,2):
                     for b in range(-1,2):
@@ -62,7 +71,7 @@ cdef double compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
                                     num_off += 1
 
                                 # Compute the Gaussian component for the neighbor.
-                                gaussian_j += cov[num_off]*(y_map[i+a,j+b,k+c] - mu)
+                                gaussian_j += inv_cov[num_off]*(y_map[i+a,j+b,k+c] - mu)
 
                 # Compute the overall Gaussian contribution for this voxel.
                 log_gaussian += (y_map[i,j,k] - mu) * gaussian_j
@@ -73,15 +82,12 @@ cdef double compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
                 # Compute the Poisson contribution for this voxel.
                 log_poisson += N[i,j,k] * log(lambda_k) - lambda_k - log_factorial(N[i,j,k])
 
+                # Compute the gradient for this voxel.
+                grad[i,j,k] = N[i,j,k] - lambda_k - gaussian_j
+
     log_gaussian *= -0.5
 
-    print(log_gaussian)
-    print(log_poisson)
-
-    return log_gaussian + log_poisson
-
-def lf(N):
-    return log_factorial(N)
+    return log_gaussian + log_poisson, grad
 
 cdef double log_factorial(int N):
     cdef int i

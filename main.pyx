@@ -67,6 +67,7 @@ d_map_truth.initialize_spec_map()
 
 # Regularize the map or deal with low occupancy pixels.
 d_map.map[f_map.map < 0.5] = 0
+d_map_photo.map[f_map.map < 0.5] = 0
 #d_map.regularize()
 
 # Get the indices for all reasonably occupied voxels.
@@ -128,12 +129,13 @@ print(y_map_truth[f_map_truth.map > 0.5].var())
 mu = y_map_truth[f_map_truth.map > 0.5].mean()
 cov = NMS.compute_neighbor_covariances(y_map_truth,f_map_truth.map)
 
-print(d_map_truth.N.dtype)
-print(NMS.lf(0))
-print(NMS.lf(int(5)))
-print(NMS.lf(float(5)))
+print(NMS.compute_log_prob(y_map_truth,d_map.N,f_map.map,mu,cov,d_map.expected_N)[0])
 
-print(NMS.compute_log_prob(y_map_truth,d_map_truth.N,f_map_truth.map,mu,cov,float(d_map_truth.expected_N)))
+y_map_photo = np.log(1+d_map_photo.map)
+y_map_photo[np.isinf(y_map_photo)] = -5
+y_map_photo[f_map.map < 0.5] = mu
+
+print(NMS.compute_log_prob(y_map_photo,d_map_photo.N,f_map.map,mu,cov,d_map.expected_N)[0])
 exit(0)
 
 sampler = NeighborMapSampler(redmagic_cat,box,f_map_truth,y_map_truth,None)
