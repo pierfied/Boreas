@@ -129,13 +129,35 @@ print(y_map_truth[f_map_truth.map > 0.5].var())
 mu = y_map_truth[f_map_truth.map > 0.5].mean()
 cov = NMS.compute_neighbor_covariances(y_map_truth,f_map_truth.map)
 
-print(NMS.compute_log_prob(y_map_truth,d_map.N,f_map.map,mu,cov,d_map.expected_N)[0])
+a,b=NMS.compute_log_prob(y_map_truth,d_map.N,f_map.map,mu,cov,d_map.expected_N)
+print('Gaussian: ',str(a))
+print('Poisson: ',str(b))
+print('Total: ',str(a+b))
+print()
 
 y_map_photo = np.log(1+d_map_photo.map)
 y_map_photo[np.isinf(y_map_photo)] = -5
 y_map_photo[f_map.map < 0.5] = mu
 
-print(NMS.compute_log_prob(y_map_photo,d_map_photo.N,f_map.map,mu,cov,d_map.expected_N)[0])
+print(d_map_photo.expected_N)
+print(d_map.expected_N)
+
+a,b = NMS.compute_log_prob(y_map_photo,d_map_photo.N,f_map.map,mu,cov,d_map.expected_N)
+print('Gaussian: ',str(a))
+print('Poisson: ',str(b))
+print('Total: ',str(a+b))
+print()
+
+a,b = NMS.compute_log_prob(y_map_photo,d_map_photo.N,f_map.map,mu,cov,d_map_photo.expected_N)
+print('Gaussian: ',str(a))
+print('Poisson: ',str(b))
+print('Total: ',str(a+b))
+print()
+
+a,b = NMS.compute_log_prob(y_map_truth,d_map_photo.N,f_map.map,mu,cov,d_map_photo.expected_N)
+print('Gaussian: ',str(a))
+print('Poisson: ',str(b))
+print('Total: ',str(a+b))
 exit(0)
 
 sampler = NeighborMapSampler(redmagic_cat,box,f_map_truth,y_map_truth,None)

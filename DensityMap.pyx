@@ -41,9 +41,9 @@ class DensityMap:
 
         # Compute the delta values.
         rand_ratio = self.cat.cat_len / self.occ_map.cat.cat_len
-        expected_N = self.occ_map.expected_n * rand_ratio \
+        self.expected_N = self.occ_map.expected_n * rand_ratio \
                      * (self.box.vox_len ** 3)
-        self.map = self.map/expected_N - 1
+        self.map = self.map/self.expected_N - 1
 
         return self.map
 

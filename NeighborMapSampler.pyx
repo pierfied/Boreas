@@ -87,7 +87,7 @@ cdef object compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
 
     log_gaussian *= -0.5
 
-    return log_gaussian + log_poisson, grad
+    return (log_gaussian + log_poisson, grad)
 
 cdef double log_factorial(int N):
     cdef int i
