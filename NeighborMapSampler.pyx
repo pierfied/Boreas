@@ -21,10 +21,13 @@ class NeighborMapSampler(HMCMapSampler):
         pass
 
 def compute_log_prob(y_map,N,f_map,mu,cov,expected_N):
+    """Wrapper function to call the cython code."""
     return compute_log_prob_c(y_map,N,f_map,mu,cov,expected_N)
 
 cdef object compute_log_prob_c(np.ndarray y_map, np.ndarray N, np.ndarray f_map,
                              double mu, np.ndarray cov, double expected_N):
+    """Compute the log-likelihood (without normalization factors)
+    of the y-map."""
 
     # Get the shape of the array.
     cdef int nx = y_map.shape[0]
@@ -98,6 +101,7 @@ cdef double log_factorial(int N):
     return sum
 
 def compute_neighbor_covariances(y_map,f_map):
+    """Wrapper function to call the cython code."""
     return compute_neighbor_covariances_c(y_map,f_map)
 
 cdef np.ndarray compute_neighbor_covariances_c(np.ndarray y_map, np.ndarray f_map):
