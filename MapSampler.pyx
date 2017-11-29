@@ -27,10 +27,10 @@ class MapSampler:
     def __init__(self, cat, box, N, f_map, y_map, mu, cov, expected_N):
         self.cat = cat
         self.box = box
-        self.N = N
-        self.f_map = f_map.map
-        self.y_map = y_map
-        self.y0 = y_map.copy()
+        self.N = N[40:60,30:50,50:90]
+        self.f_map = f_map.map[40:60,30:50,50:90]
+        self.y_map = y_map[40:60,30:50,50:90]
+        self.y0 = self.y_map.copy()
         self.mu = mu
         self.cov = cov
         self.expected_N = expected_N
@@ -46,6 +46,7 @@ class MapSampler:
         # Setup the sampler function.
         sampler = sampler_lib.sample_map
         sampler.argtypes = [ctypes.POINTER(ctypes.c_double),
+                            ctypes.POINTER(ctypes.c_double),
                             LikelihoodArgs, ctypes.c_int, ctypes.c_int,
                             ctypes.c_int, ctypes.c_double]
         sampler.restype = SampleChain
@@ -55,6 +56,11 @@ class MapSampler:
         num_params = np.sum(y_good)
         y_inds = -np.ones(len(y_good),dtype=np.int32)
         y_inds[y_good] = np.arange(num_params)
+        print('Num Params: ',num_params)
+
+        # Calculate the mass and step-size scales.
+        mass = self.cov[0] ** -0.25 * np.ones(num_params,dtype=np.double)
+        epsilon *= self.cov[0] ** 0.25
 
         # Create the LikelihoodArgs.
         args = LikelihoodArgs()
@@ -62,9 +68,12 @@ class MapSampler:
         args.f = self.f_map.ravel().ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         args.y_inds = y_inds.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         args.N = self.N.ravel().ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        args.nx = self.box.nx
-        args.ny = self.box.ny
-        args.nz = self.box.nz
+        # args.nx = self.box.nx
+        # args.ny = self.box.ny
+        # args.nz = self.box.nz
+        args.nx = self.N.shape[0]
+        args.ny = self.N.shape[1]
+        args.nz = self.N.shape[2]
         args.mu = self.mu
         args.inv_cov = self.inv_cov.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         args.expected_N = self.expected_N
@@ -73,7 +82,8 @@ class MapSampler:
 
         # Call that MoFo
         y0 = self.y0[self.f_map > 0.5].ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        results = sampler(y0, args, num_samps, num_steps, num_burn, epsilon)
+        m = mass.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        results = sampler(y0, m, args, num_samps, num_steps, num_burn, epsilon)
 
         print('DONE!')
 

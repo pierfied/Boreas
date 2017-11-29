@@ -97,7 +97,7 @@ plt.savefig('y_hist.png')
 plt.clf()
 
 # Adjust the delta-map for the redmagic bias.
-d_map_spec.map /= 1.5
+# d_map_spec.map /= 1.5
 
 # Create some patches.
 # p = Patch(truth_cat,d_map,cosmo,box,1,redmagic_cat,214211)
@@ -168,6 +168,15 @@ y_map_photo[f_map_photo.map < 0.5] = mu
 
 print('About to start sampling!')
 
+y_map_spec = np.log(1 + d_map_spec.map)
+y_map_spec[np.isinf(y_map_spec)] = -5
+y_map_spec[f_map_spec.map < 0.5] = mu
+
+np.save(open('y_spec.npy','wb'),y_map_spec[f_map_spec.map > 0.5].ravel())
+
+# DELETE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# cov[1:] = 0
+
 sampler = MS.MapSampler(redmagic_cat,box,d_map_spec.N,f_map_spec,y_map_photo,
                         mu, cov, d_map_spec.expected_N)
 
@@ -178,8 +187,9 @@ np.save(open('y_true.npy','wb'),y_true)
 y_photo = y_map_photo[f_map_spec.map > 0.5].ravel()
 np.save(open('y_photo.npy','wb'),y_photo)
 
-y_map_spec = np.log(1 + d_map_spec.map)
-y_map_spec[np.isinf(y_map_spec)] = -5
-y_map_spec[f_map_spec.map < 0.5] = mu
-
-np.save(open('y_spec.npy','wb'),y_map_spec[f_map_spec.map > 0.5].ravel())
+all_good_inds = np.logical_and(f_map_spec.map > 0.5,f_map_truth.map > 0.5)
+ratio = d_map_spec.map/d_map_truth.map
+plt.hist(ratio[all_good_inds],range=(0,3),bins=50)
+plt.xlabel('$\delta_{spec}/\delta_{true}$')
+plt.ylabel('Number of Voxels')
+plt.savefig('bias.png')
