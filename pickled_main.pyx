@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 sampler = pickle.load(open('save.p','rb'))
 
-chain,logp = sampler.sample(5000,10,0,0.01)
+chain,logp = sampler.sample(10000,10,0,1/256.)
 
 np.save(open('chain.npy','wb'),chain,allow_pickle=False)
 np.save(open('likelihoods.npy','wb'),logp,allow_pickle=False)

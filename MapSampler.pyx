@@ -59,8 +59,8 @@ class MapSampler:
         print('Num Params: ',num_params)
 
         # Calculate the mass and step-size scales.
-        mass = self.cov[0] ** -0.25 * np.ones(num_params,dtype=np.double)
-        epsilon *= self.cov[0] ** 0.25
+        mass = np.ones(num_params,dtype=np.double)
+        epsilon *= np.sqrt(self.cov[0])
 
         # Create the LikelihoodArgs.
         args = LikelihoodArgs()
