@@ -27,9 +27,9 @@ class MapSampler:
     def __init__(self, cat, box, N, f_map, y_map, mu, cov, expected_N):
         self.cat = cat
         self.box = box
-        self.N = N[40:60,30:50,50:90]
-        self.f_map = f_map.map[40:60,30:50,50:90]
-        self.y_map = y_map[40:60,30:50,50:90]
+        self.N = N
+        self.f_map = f_map
+        self.y_map = y_map
         self.y0 = self.y_map.copy()
         self.mu = mu
         self.cov = cov
