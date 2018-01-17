@@ -30,6 +30,7 @@ def test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon,
     mean_N = N_obs_mask_adj.mean()
     delta_obs = N_obs_mask_adj / mean_N - 1
     y_obs = np.log(1 + np.clip(delta_obs, -1 + 1e-3, np.inf))
+    y_obs = np.random.standard_normal(y_true.shape)
 
     # Sample the map.
     cov = np.array([var, 0, 0, 0])
@@ -41,41 +42,50 @@ def test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon,
 
 # Test params.
 nvox = 10
-var = 1.
-mu = -var / 2.
+# var = 4.
+var = 5.84
+# mu = -var / 2.
+mu = -1.66
+var = -2 * mu
 expected_N = 2.
 
 # Sampling params.
 num_samps = 1000
-num_burn = 100
+num_burn = 500
 num_steps = 10
-epsilon = 1 / 8.
+epsilon = 1 / 128.
 
 box = BoundingBox(0, 0, 0, nvox, nvox, nvox, 1)
 # results = test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon)
+#
+# pickle.dump(results, open('results_%d.p' % expected_N, 'wb'))
 
-# pickle.dump(results, open('results.p', 'wb'))
-
-results = pickle.load(open('results.p', 'rb'))
+results = pickle.load(open('results_%d.p' % expected_N, 'rb'))
 
 chain = results[0]
 logp = results[1]
 y_true = results[2]
 y_obs = results[3]
 
-plt.hist(chain[:,9],25)
-plt.savefig('hist.png')
-
 plt.plot(range(len(logp)), logp)
-plt.savefig('logp.png')
+plt.savefig('logp_%d.png' % expected_N)
 plt.clf()
 
 c = ChainConsumer()
 c.add_chain(chain)
-c.configure(sigma2d=False)
 
 y_mle = np.array([y[1] for y in c.analysis.get_summary().values()])
 
-plt.scatter(y_true, y_obs)
-plt.scatter(y_true, y_mle)
-plt.savefig('comp.png')
+plt.scatter(y_true, y_obs, label='Random')
+plt.scatter(y_true, y_mle, label='HMC MLE')
+plt.plot([-4, 4], [-4, 4], c='k', label='y=x')
+plt.legend()
+plt.xlabel('y True')
+plt.ylabel('y Sample')
+plt.title('Samples: %d, Pix/Side: %d, $\sigma_y^2=%f$, $\\bar{N}=%d$' % (
+    num_samps, nvox, var, expected_N))
+plt.savefig('comp_%d.png' % expected_N)
+
+unconstrained_inds = [2,6,8,9,12]
+c.plotter.plot(parameters=unconstrained_inds,truth=y_true.ravel()[unconstrained_inds])
+plt.savefig('unconstrained_contour.png')

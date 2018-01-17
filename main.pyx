@@ -133,6 +133,12 @@ y_map_truth[f_map_truth.map < 0.5] = y_map_truth[f_map_truth.map > 0.5].mean()
 mu = y_map_truth[f_map_truth.map > 0.5].mean()
 cov = MS.compute_neighbor_covariances(y_map_truth,f_map_truth.map)
 
+print(d_map_truth.expected_N)
+print(mu)
+print(cov)
+print(np.median(y_map_truth[f_map_truth.map > 0.5]))
+exit(0)
+
 # a,b=NMS.compute_log_prob(y_map_truth,d_map.N,f_map.map,mu,cov,d_map.expected_N)
 # print('Gaussian: ',str(a))
 # print('Poisson: ',str(b))
