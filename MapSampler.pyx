@@ -171,3 +171,83 @@ cdef np.ndarray compute_neighbor_covariances_c(np.ndarray y_map, np.ndarray f_ma
     cov -= mean ** 2
 
     return cov
+
+def compute_neighbor_covariances_N(N_map, y_map, f_map):
+    """Wrapper function to call the cython code."""
+    return compute_neighbor_covariances_N_c(N_map, y_map, f_map)
+
+cdef np.ndarray compute_neighbor_covariances_N_c(np.ndarray N_map, np.ndarray y_map, np.ndarray f_map):
+    """Computes the covariances of y-values for face, edge, and corner neighbors."""
+
+    # Get the shape of the array.
+    cdef int nx = N_map.shape[0]
+    cdef int ny = N_map.shape[1]
+    cdef int nz = N_map.shape[2]
+
+    cdef int i, j, k
+    cdef int a, b, c
+    cdef double sum_self = 0
+    cdef double sum_face = 0
+    cdef double sum_edge = 0
+    cdef double sum_corner = 0
+    cdef double count_self = 0
+    cdef double count_face = 0
+    cdef double count_edge = 0
+    cdef double count_corner = 0
+    cdef int num_off
+    # Loop over all pixels.
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+
+                # Verify that the voxel has reasonable occupancy.
+                if f_map[i, j, k] > 0.5:
+
+                    # Loop over all neighbors.
+                    for a in range(-1, 2):
+                        for b in range(-1, 2):
+                            for c in range(-1, 2):
+                                # Count the number of dimensions with non-zero offset.
+                                num_off = 0
+                                if a != 0:
+                                    num_off += 1
+                                if b != 0:
+                                    num_off += 1
+                                if c != 0:
+                                    num_off += 1
+
+                                # Check if this neighbor is within the map,
+                                # and has reasonable occupancy.
+                                if 0 <= i + a < nx and 0 <= j + b < ny and 0 <= k + c < nz \
+                                        and f_map[i + a, j + b, k + c] > 0.5:
+
+                                    # Check if is self, face, edge, or corner neighbor
+                                    # and add to the appropriate sum.
+                                    if num_off == 0:
+                                        sum_self += N_map[i, j, k] * N_map[i + a, j + b, k + c]
+                                        count_self += 1
+                                    elif num_off == 1:
+                                        sum_face += N_map[i, j, k] * N_map[i + a, j + b, k + c]
+                                        count_face += 1
+                                    elif num_off == 2:
+                                        sum_edge += N_map[i, j, k] * N_map[i + a, j + b, k + c]
+                                        count_edge += 1
+                                    elif num_off == 3:
+                                        sum_corner += N_map[i, j, k] * N_map[i + a, j + b, k + c]
+                                        count_corner += 1
+
+    # Compute the covariances.
+    cdef np.ndarray cov = np.zeros(shape=(4))
+    cov[0] = sum_self / count_self
+    cov[1] = sum_face / count_face
+    cov[2] = sum_edge / count_edge
+    cov[3] = sum_corner / count_corner
+    cdef double mean = N_map[f_map > 0.5].mean()
+    cov -= mean ** 2
+
+    # Convert the covariance in the number counts into covariance in y.
+    mu = y_map[f_map > 0.5].mean()
+    print(cov)
+    cov_y = cov / ((mean ** 2) * np.exp(2 * mu))
+
+    return cov_y

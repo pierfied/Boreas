@@ -86,6 +86,6 @@ plt.title('Samples: %d, Pix/Side: %d, $\sigma_y^2=%f$, $\\bar{N}=%d$' % (
     num_samps, nvox, var, expected_N))
 plt.savefig('comp_%d.png' % expected_N)
 
-unconstrained_inds = [2,6,8,9,12]
-c.plotter.plot(parameters=unconstrained_inds,truth=y_true.ravel()[unconstrained_inds])
+unconstrained_inds = [2, 6, 8, 9, 12]
+c.plotter.plot(parameters=unconstrained_inds, truth=y_true.ravel()[unconstrained_inds])
 plt.savefig('unconstrained_contour.png')

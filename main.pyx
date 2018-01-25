@@ -137,6 +137,47 @@ print(d_map_truth.expected_N)
 print(mu)
 print(cov)
 print(np.median(y_map_truth[f_map_truth.map > 0.5]))
+
+cov = MS.compute_neighbor_covariances_N(d_map_truth.N, y_map_truth, f_map_truth.map)
+print(cov)
+
+thresh = 0.8
+plt.hist(y_map_truth[f_map_truth.map > thresh],50)
+plt.axvline(np.median(y_map_truth[f_map_truth.map > thresh]),c='g',label='Median')
+plt.axvline(np.mean(y_map_truth[f_map_truth.map > thresh]),c='r',label='Mean')
+plt.legend()
+plt.xlabel('$\ln(1+\delta)$')
+plt.ylabel('Number of Pixels')
+sigma2_y = -2*np.median(y_map_truth[f_map_truth.map > thresh])
+plt.title('$f_i > %0.2f$, $\sigma^{2}_{y} = %0.2f$' % (thresh,sigma2_y))
+plt.savefig('y_map_truth.png')
+plt.clf()
+
+from scipy.stats import norm
+tmp = y_map_truth[f_map_truth.map > thresh]
+tmp = tmp[tmp > -4]
+mu,std = norm.fit(tmp)
+plt.hist(tmp,50,normed=True)
+xmin,xmax = plt.xlim()
+x = np.linspace(xmin,xmax,100)
+p = norm.pdf(x,mu,std)
+plt.plot(x,p,'k')
+plt.xlabel('$\ln(1+\delta)')
+sigma2_y = -2*mu
+plt.title('$f_i > %0.2f$ w/ Normal Fit $\mu = %0.2f$, $\sigma^{2}_{y} = %0.2f$' % (thresh,mu,sigma2_y))
+plt.savefig('fit_y_map.png')
+plt.clf()
+print(mu)
+print(std)
+
+plt.hist(d_map_truth.N[f_map_truth.map > thresh],50,range=(-1,200))
+plt.xlabel('Number of Galaxies')
+plt.ylabel('Number of Pixels')
+plt.title('$f_i > %0.2f$' % thresh)
+plt.savefig('N_map_truth.png')
+plt.clf()
+
+print(d_map_truth.expected_N)
 exit(0)
 
 # a,b=NMS.compute_log_prob(y_map_truth,d_map.N,f_map.map,mu,cov,d_map.expected_N)
