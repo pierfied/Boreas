@@ -50,7 +50,7 @@ Omega_truth = 0.29190631739
 # Calculate the occupancy maps.
 f_map_photo = OccupancyMap(randoms_photo_cat, cosmo, box, Omega)
 f_map_spec = OccupancyMap(randoms_spec_cat, cosmo, box, Omega)
-f_map_truth = OccupancyMap(randoms_truth_cat,cosmo,box,Omega_truth)
+f_map_truth = OccupancyMap(randoms_truth_cat,cosmo,box,Omega_truth,False)
 
 # Plot the distribution of occupancy values.
 ind = f_map_photo.map > 0
@@ -62,12 +62,22 @@ plt.tight_layout()
 plt.savefig('f_hist.png')
 plt.clf()
 
+# Plot the distribution of occupancy values.
+ind = f_map_truth.map > 0
+plt.hist(f_map_truth.map[ind], bins=50)
+plt.title('i<23 Randoms Occupancy Map')
+plt.xlabel('Voxel Occupancies [%]')
+plt.ylabel('Number of Voxels')
+plt.tight_layout()
+plt.savefig('f_truth_hist.png')
+plt.clf()
+
 # Calculate the delta maps.
 d_map_photo = DensityMap(redmagic_cat, cosmo, box, f_map_photo)
 d_map_spec = DensityMap(redmagic_cat, cosmo, box, f_map_spec)
 d_map_spec.initialize_spec_map()
 d_map_truth = DensityMap(truth_cat,cosmo,box,f_map_truth)
-d_map_truth.initialize_spec_map()
+# d_map_truth.initialize_spec_map()
 
 # Regularize the map or deal with low occupancy pixels.
 d_map_spec.map[f_map_spec.map < 0.5] = 0
@@ -75,7 +85,16 @@ d_map_photo.map[f_map_photo.map < 0.5] = 0
 #d_map.regularize()
 
 # Get the indices for all reasonably occupied voxels.
-ind = f_map_photo.map > 0.5
+ind = f_map_truth.map > 0.5
+
+# Plot the delta distribution.
+plt.hist(d_map_truth.N2[ind],bins=100)
+plt.title('i<23 $z_{spec}$ N Map')
+plt.xlabel('Number of Galaxies')
+plt.ylabel('Number of Voxels')
+plt.tight_layout()
+plt.savefig('N_hist.png')
+plt.clf()
 
 # Plot the delta distribution.
 plt.hist(d_map_truth.map[ind],bins=100,range=(-1,5))
@@ -88,13 +107,47 @@ plt.clf()
 
 # Plot the y distribution.
 y = np.log(1+d_map_truth.map[ind])
-plt.hist(y[np.isfinite(y)],bins=50)
+y[np.logical_not(np.isfinite(y))] = -6
+plt.hist(y,bins=50)
+# plt.hist(y[np.isfinite(y)],bins=50)
 plt.title('i<23 Catalog $z_{spec}$ y Map')
 plt.xlabel('$\ln(1+\delta)$')
 plt.ylabel('Number of Voxels')
 plt.tight_layout()
 plt.savefig('y_hist.png')
 plt.clf()
+
+from scipy.stats import norm
+def gen_plot_z_slice(z, dz = 0.02):
+    z_mids = d_map_truth.z_mids
+    ind = np.logical_and(z_mids > z - 0.5 * dz, z_mids < z + 0.5 * dz)
+    ind = np.logical_and(f_map_truth.map > 0.8, ind)
+
+    y = np.log(1 + d_map_truth.map[ind])
+    y[np.logical_not(np.isfinite(y))] = -6
+
+    mean, std = norm.fit(y)
+
+    plt.hist(y,bins=50,normed=True)
+    xmin, xmax = plt.xlim()
+    x = np.linspace(xmin, xmax)
+    y = norm.pdf(x, mean, std)
+    plt.plot(x, y, c='k')
+    var_y = -2 * mean
+    plt.title('i<23 z = %f, dz = %f, $\sigma^{2}_{y} = %0.2f$' % (z, dz, var_y))
+    plt.xlabel('$\ln(1+\delta)$')
+    plt.ylabel('Number of Pixels')
+    plt.tight_layout()
+    plt.savefig('y_hist_z_%0.2f.png' % z)
+    plt.clf()
+
+
+gen_plot_z_slice(0.2)
+gen_plot_z_slice(0.4)
+gen_plot_z_slice(0.6)
+gen_plot_z_slice(0.8)
+
+exit(0)
 
 # Adjust the delta-map for the redmagic bias.
 # d_map_spec.map /= 1.5

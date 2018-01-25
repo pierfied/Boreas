@@ -1,13 +1,15 @@
 import numpy as np
 from astropy import units, constants
+from scipy.interpolate import interp1d
 
 class OccupancyMap:
     """Map of the percentages of each voxel in the survey region (frac_good)."""
-    def __init__(self,cat,cosmo,box,omega):
+    def __init__(self,cat,cosmo,box,omega,const_density=True):
         self.cat = cat
         self.cosmo = cosmo
         self.box = box
         self.omega = omega
+        self.const_density = const_density
 
         self.calc_expected_n()
 
@@ -31,8 +33,12 @@ class OccupancyMap:
                     * dz).to(units.Mpc).value
         n = N / ((Dc**2) * self.omega * delta_Dc)
 
-        # Return the mean number count density.
-        self.expected_n = np.mean(n)
+        # Return the requested number count density.
+        if self.const_density:
+            n = np.ones(n.shape) * np.mean(n)
+        n = np.concatenate(([n[0]], n, [n[-1]]))
+        mid_z = np.concatenate(([0], mid_z, [10]))
+        self.expected_n = interp1d(mid_z, n, kind='cubic')
 
         return self.expected_n
 
@@ -56,9 +62,16 @@ class OccupancyMap:
         y_edges = np.linspace(y0,y0+ny*dl,1+ny)
         z_edges = np.linspace(z0,z0+nz*dl,1+nz)
 
+        # Compute the middles of the bins.
+        x_mids = np.tile(np.reshape(x_edges[:-1] + 0.5*dl, [nx, 1, 1]), [1, ny, nz])
+        y_mids = np.tile(np.reshape(y_edges[:-1] + 0.5*dl, [1, ny, 1]), [nx, 1, nz])
+        z_mids = np.tile(np.reshape(z_edges[:-1] + 0.5*dl, [1, 1, nz]), [nx, ny, 1])
+        r_mids = np.sqrt(x_mids ** 2 + y_mids ** 2 + z_mids ** 2)
+        z_mids = self.cosmo.redshift(r_mids)
+
         # Compute the occupancy fractions.
         self.map,_ = np.histogramdd(cart_photo,(x_edges,y_edges,z_edges))
-        expected_N = (self.expected_n * (self.box.vox_len ** 3))
+        expected_N = (self.expected_n(z_mids) * (self.box.vox_len ** 3))
         self.map /= expected_N
 
         return self.map
