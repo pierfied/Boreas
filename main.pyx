@@ -123,12 +123,15 @@ def gen_plot_z_slice(z, dz = 0.02):
     ind = np.logical_and(z_mids > z - 0.5 * dz, z_mids < z + 0.5 * dz)
     ind = np.logical_and(f_map_truth.map > 0.8, ind)
 
-    y = np.log(1 + d_map_truth.map[ind])
+    y = np.log(1 + d_map_truth.map)
     y[np.logical_not(np.isfinite(y))] = -6
+
+    print(MS.compute_neighbor_covariances_N_at_z(d_map_truth.N2, y, f_map_truth.map,
+                                                 d_map_truth.z_mids, z, dz))
 
     mean, std = norm.fit(y)
 
-    plt.hist(y,bins=50,normed=True)
+    plt.hist(y[ind],bins=50,normed=True)
     xmin, xmax = plt.xlim()
     x = np.linspace(xmin, xmax)
     y = norm.pdf(x, mean, std)
