@@ -118,6 +118,7 @@ plt.savefig('y_hist.png')
 plt.clf()
 
 from scipy.stats import norm
+from scipy.optimize import curve_fit
 def gen_plot_z_slice(z, dz = 0.01):
     z_mids = d_map_truth.z_mids
     ind = np.logical_and(f_map_truth.map > 0.8, np.abs(z_mids - z) < dz)
@@ -139,15 +140,28 @@ def gen_plot_z_slice(z, dz = 0.01):
 
     print(np.mean(d_map_truth.map[ind]))
 
-    mean, std = norm.fit(y[ind])
+    counts,bins,_ = plt.hist(y[ind],bins=50,density=True)
 
-    plt.hist(y[ind],bins=50,normed=True)
+    bin_mids = bins[:-1] + 0.5*(bins[1]-bins[0])
+
+    def one_param_normal(x, sigma2_y):
+        mu = -0.5 * sigma2_y
+        return norm.pdf(x, loc=mu, scale=np.sqrt(sigma2_y))
+
+    popt, pcov = curve_fit(one_param_normal, bin_mids, counts, p0=(1))
+
+    var_y = popt
+    mean = -0.5 * var_y
+    std = np.sqrt(var_y)
+
+    plt.xlim(-6,3)
     xmin, xmax = plt.xlim()
     x = np.linspace(xmin, xmax)
     y = norm.pdf(x, mean, std)
     plt.plot(x, y, c='k')
     var_y = -2 * mean
-    plt.title('i<23 z = %f, dz = %f, $\sigma^{2}_{y} = %0.2f$' % (z, dz, var_y))
+    plt.title('i<23, z = %0.2f, dz = %0.2f, $\sigma^{2}_{y} = %0.2f$, $\langle \delta \\rangle = %0.4f$, $\langle N \\rangle = %0.2f$'
+              % (z, 2*dz, var_y, np.mean(d_map_truth.map[ind]), expected_N))
     plt.xlabel('$\ln(1+\delta)$')
     plt.ylabel('Number of Pixels')
     plt.tight_layout()
