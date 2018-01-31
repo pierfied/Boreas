@@ -98,6 +98,13 @@ class DensityMap:
         y_edges = np.linspace(y0,y0+ny*dl,1+ny)
         z_edges = np.linspace(z0,z0+nz*dl,1+nz)
 
+        # Compute the middles of the bins.
+        x_mids = np.tile(np.reshape(x_edges[:-1] + 0.5*dl, [nx, 1, 1]), [1, ny, nz])
+        y_mids = np.tile(np.reshape(y_edges[:-1] + 0.5*dl, [1, ny, 1]), [nx, 1, nz])
+        z_mids = np.tile(np.reshape(z_edges[:-1] + 0.5*dl, [1, 1, nz]), [nx, ny, 1])
+        r_mids = np.sqrt(x_mids ** 2 + y_mids ** 2 + z_mids ** 2)
+        z_mids = self.cosmo.redshift(r_mids)
+
         # Compute the number counts.
         self.map,_ = np.histogramdd(cart_spec,(x_edges,y_edges,z_edges))
         self.N = self.map.copy()
@@ -107,7 +114,12 @@ class DensityMap:
         self.N2 = self.map.copy()
 
         # Compute the delta values.
-        self.expected_N = self.map[self.occ_map.map > 0.5].mean()
+        rand_ratio = self.cat.cat_len / self.occ_map.cat.cat_len
+        rand_ratio = 0.4269865896
+        self.expected_N = self.occ_map.expected_n(z_mids) * rand_ratio \
+                     * (self.box.vox_len ** 3)
         self.map = self.map/self.expected_N - 1
+
+        self.z_mids = z_mids
 
         return self.map

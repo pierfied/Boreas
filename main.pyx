@@ -77,7 +77,7 @@ d_map_photo = DensityMap(redmagic_cat, cosmo, box, f_map_photo)
 d_map_spec = DensityMap(redmagic_cat, cosmo, box, f_map_spec)
 d_map_spec.initialize_spec_map()
 d_map_truth = DensityMap(truth_cat,cosmo,box,f_map_truth)
-# d_map_truth.initialize_spec_map()
+d_map_truth.initialize_spec_map()
 
 # Regularize the map or deal with low occupancy pixels.
 d_map_spec.map[f_map_spec.map < 0.5] = 0
@@ -118,10 +118,9 @@ plt.savefig('y_hist.png')
 plt.clf()
 
 from scipy.stats import norm
-def gen_plot_z_slice(z, dz = 0.02):
+def gen_plot_z_slice(z, dz = 0.01):
     z_mids = d_map_truth.z_mids
-    ind = np.logical_and(z_mids > z - 0.5 * dz, z_mids < z + 0.5 * dz)
-    ind = np.logical_and(f_map_truth.map > 0.8, ind)
+    ind = np.logical_and(f_map_truth.map > 0.8, np.abs(z_mids - z) < dz)
 
     y = np.log(1 + d_map_truth.map)
     y[np.logical_not(np.isfinite(y))] = -6
@@ -129,7 +128,18 @@ def gen_plot_z_slice(z, dz = 0.02):
     print(MS.compute_neighbor_covariances_N_at_z(d_map_truth.N2, y, f_map_truth.map,
                                                  d_map_truth.z_mids, z, dz))
 
-    mean, std = norm.fit(y)
+    print(truth_cat.cat_len)
+    print(randoms_truth_cat.cat_len)
+    rand_ratio = truth_cat.cat_len / randoms_truth_cat.cat_len
+    rand_ratio = 0.4269865896
+    expected_N = f_map_truth.expected_n(z) * rand_ratio * (vox_len ** 3)
+    print(expected_N)
+    print(d_map_truth.N2[ind].mean())
+    print(rand_ratio)
+
+    print(np.mean(d_map_truth.map[ind]))
+
+    mean, std = norm.fit(y[ind])
 
     plt.hist(y[ind],bins=50,normed=True)
     xmin, xmax = plt.xlim()
