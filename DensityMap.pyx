@@ -115,7 +115,7 @@ class DensityMap:
 
         # Compute the delta values.
         rand_ratio = self.cat.cat_len / self.occ_map.cat.cat_len
-        rand_ratio = 0.4269865896
+        rand_ratio = 0.4269865896/10
         self.expected_N = self.occ_map.expected_n(z_mids) * rand_ratio \
                      * (self.box.vox_len ** 3)
         self.map = self.map/self.expected_N - 1

@@ -132,13 +132,18 @@ def gen_plot_z_slice(z, dz = 0.01):
     print(truth_cat.cat_len)
     print(randoms_truth_cat.cat_len)
     rand_ratio = truth_cat.cat_len / randoms_truth_cat.cat_len
-    rand_ratio = 0.4269865896
+    rand_ratio = 0.4269865896/10
     expected_N = f_map_truth.expected_n(z) * rand_ratio * (vox_len ** 3)
     print(expected_N)
     print(d_map_truth.N2[ind].mean())
     print(rand_ratio)
 
     print(np.mean(d_map_truth.map[ind]))
+
+    median = np.median(y[ind])
+    print('Median %f' % median)
+    med_var = -2. * median
+    print('Median Var %f' % med_var)
 
     counts,bins,_ = plt.hist(y[ind],bins=50,density=True)
 
@@ -148,7 +153,7 @@ def gen_plot_z_slice(z, dz = 0.01):
         mu = -0.5 * sigma2_y
         return norm.pdf(x, loc=mu, scale=np.sqrt(sigma2_y))
 
-    popt, pcov = curve_fit(one_param_normal, bin_mids, counts, p0=(1))
+    popt, pcov = curve_fit(one_param_normal, bin_mids, counts)
 
     var_y = popt
     mean = -0.5 * var_y
@@ -162,6 +167,7 @@ def gen_plot_z_slice(z, dz = 0.01):
     var_y = -2 * mean
     plt.title('i<23, z = %0.2f, dz = %0.2f, $\sigma^{2}_{y} = %0.2f$, $\langle \delta \\rangle = %0.4f$, $\langle N \\rangle = %0.2f$'
               % (z, 2*dz, var_y, np.mean(d_map_truth.map[ind]), expected_N))
+    plt.axvline(median, c='g')
     plt.xlabel('$\ln(1+\delta)$')
     plt.ylabel('Number of Pixels')
     plt.tight_layout()
