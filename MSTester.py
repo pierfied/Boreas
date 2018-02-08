@@ -10,8 +10,9 @@ import pickle
 from chainconsumer import ChainConsumer
 
 
-def test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon, mask_frac=None):
+def test_diag(box, var, expected_N, num_samps, num_steps, num_burn, epsilon, mask_frac=None):
     # Generate y_values.
+    mu = -0.5 * var
     y_true = np.random.normal(mu, np.sqrt(var), [box.nx, box.ny, box.nz])
 
     # Create the mask.
@@ -40,25 +41,77 @@ def test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon,
     return chain, logp, y_true, y_obs
 
 
+def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks_frac=None):
+    # Create the full covariance matrix.
+    num_vox = box.nx * box.ny * box.nz
+    full_cov = np.zeros((num_vox, num_vox))
+    # Loop over all voxels.
+    for i in range(box.nx):
+        for j in range(box.ny):
+            for k in range(box.nz):
+                ind_vox = i * box.ny * box.nz + j * box.nz + k
+
+                # Loop over all neighbors.
+                for a in range(-1, 2):
+                    for b in range(-1, 2):
+                        for c in range(-1, 2):
+
+                            if 0 <= i + a < box.nx and 0 <= j + b < box.ny and 0 <= k + c < box.nz:
+                                # Count the number of dimensions with non-zero offset.
+                                num_off = 0
+                                if a != 0:
+                                    num_off += 1
+                                if b != 0:
+                                    num_off += 1
+                                if c != 0:
+                                    num_off += 1
+
+                                ind_neighbor = (i + a) * box.ny * box.nz + (j + b) * box.nz + (
+                                        k + c)
+
+                                # Set the value in the full covariance matrix.
+                                full_cov[ind_vox, ind_neighbor] = cov[num_off]
+
+    # Diagonalize the covariance matrix.
+    L = np.linalg.cholesky(full_cov)
+
+    # Create a sample y_map.
+    mu = -0.5 * cov[0]
+    y_true = mu + np.reshape(np.matmul(L, np.random.standard_normal(num_vox)),
+                             (box.nx, box.ny, box.nz))
+
+    # Create a Poisson realization and calculate observed d and y maps.
+    N_obs = np.random.poisson(expected_N * np.exp(y_true))
+    d_obs = N_obs / expected_N - 1
+    y_obs = np.log(1 + d_obs)
+
+    # Sample the map.
+    mask = np.ones(y_true.shape)
+    y_obs = np.random.standard_normal(y_true.shape)
+    ms = MS.MapSampler(None, box, N_obs, mask, y_obs, mu, cov, expected_N)
+    chain, logp = ms.sample(num_samps, num_steps, num_burn, epsilon)
+
+    return chain, logp, y_true, y_obs
+
+
 # Test params.
 nvox = 10
-# var = 4.
-var = 5.84
-# mu = -var / 2.
-mu = -1.66
-var = -2 * mu
+var = 0.1
 expected_N = 2.
 
 # Sampling params.
-num_samps = 1000
-num_burn = 500
+num_samps = 10000
+num_burn = 0
 num_steps = 10
-epsilon = 1 / 128.
+epsilon = 1 / 64.
 
 box = BoundingBox(0, 0, 0, nvox, nvox, nvox, 1)
 # results = test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon)
-#
-# pickle.dump(results, open('results_%d.p' % expected_N, 'wb'))
+
+cov = var * np.array([1, 0.1, 0.05, 0.01])
+results = test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon)
+
+pickle.dump(results, open('results_%d.p' % expected_N, 'wb'))
 
 results = pickle.load(open('results_%d.p' % expected_N, 'rb'))
 
