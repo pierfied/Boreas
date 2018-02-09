@@ -5,6 +5,7 @@ pyximport.install(setup_args={"include_dirs": numpy.get_include()})
 import numpy as np
 import MapSampler as MS
 from BoundingBox import BoundingBox
+import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pickle
 from chainconsumer import ChainConsumer
@@ -84,10 +85,11 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
     N_obs = np.random.poisson(expected_N * np.exp(y_true))
     d_obs = N_obs / expected_N - 1
     y_obs = np.log(1 + d_obs)
+    y_obs = np.clip(y_obs, -6, 6)
 
     # Sample the map.
     mask = np.ones(y_true.shape)
-    y_obs = np.random.standard_normal(y_true.shape)
+    # y_obs = np.random.standard_normal(y_true.shape)
     ms = MS.MapSampler(None, box, N_obs, mask, y_obs, mu, cov, expected_N)
     chain, logp = ms.sample(num_samps, num_steps, num_burn, epsilon)
 
@@ -103,12 +105,13 @@ expected_N = 2.
 num_samps = 10000
 num_burn = 0
 num_steps = 10
-epsilon = 1 / 64.
+epsilon = 1 / 128.
 
 box = BoundingBox(0, 0, 0, nvox, nvox, nvox, 1)
 # results = test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon)
 
 cov = var * np.array([1, 0.1, 0.05, 0.01])
+# cov = var * np.array([1, 0, 0, 0])
 results = test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon)
 
 pickle.dump(results, open('results_%d.p' % expected_N, 'wb'))
