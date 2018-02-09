@@ -90,7 +90,7 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
     # Sample the map.
     mask = np.ones(y_true.shape)
     # y_obs = np.random.standard_normal(y_true.shape)
-    ms = MS.MapSampler(None, box, N_obs, mask, y_obs, mu, cov, expected_N)
+    ms = MS.MapSampler(None, box, N_obs, mask, y_obs, mu, full_cov, expected_N)
     chain, logp = ms.sample(num_samps, num_steps, num_burn, epsilon)
 
     return chain, logp, y_true, y_obs
@@ -102,10 +102,10 @@ var = 0.1
 expected_N = 2.
 
 # Sampling params.
-num_samps = 10000
+num_samps = 1000
 num_burn = 0
 num_steps = 10
-epsilon = 1 / 128.
+epsilon = 1 / 8.
 
 box = BoundingBox(0, 0, 0, nvox, nvox, nvox, 1)
 # results = test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon)

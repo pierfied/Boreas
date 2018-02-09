@@ -2,12 +2,14 @@ import numpy as np
 cimport numpy as np
 import ctypes
 
+
 class SampleChain(ctypes.Structure):
     _fields_ = [('num_samples', ctypes.c_int),
                 ('num_params', ctypes.c_int),
                 ('accept_rate', ctypes.c_double),
                 ('samples', ctypes.POINTER(ctypes.POINTER(ctypes.c_double))),
                 ('log_likelihoods', ctypes.POINTER(ctypes.c_double))]
+
 
 class LikelihoodArgs(ctypes.Structure):
     _fields_ = [('num_params', ctypes.c_int),
@@ -20,6 +22,7 @@ class LikelihoodArgs(ctypes.Structure):
                 ('mu', ctypes.c_double),
                 ('inv_cov', ctypes.POINTER(ctypes.c_double)),
                 ('expected_N', ctypes.c_double)]
+
 
 class MapSampler:
     """Class that performs map sampling by calling the C HMC code."""
@@ -36,8 +39,7 @@ class MapSampler:
         self.expected_N = expected_N
 
         # Compute the values for the inverse covariance matrix.
-        self.inv_cov = cov / (cov[0] ** 2)
-        self.inv_cov[1:] *= -1
+        self.inv_cov = np.linalg.inv(cov)
 
     def sample(self, num_samps, num_steps, num_burn, epsilon):
         # Load the likelihood/sampling library.
@@ -54,13 +56,13 @@ class MapSampler:
         # Get the number of parameters and usable indices.
         y_good = self.f_map.ravel() > 0.5
         num_params = np.sum(y_good)
-        y_inds = -np.ones(len(y_good),dtype=np.int32)
+        y_inds = -np.ones(len(y_good), dtype=np.int32)
         y_inds[y_good] = np.arange(num_params)
-        print('Num Params: ',num_params)
+        print('Num Params: ', num_params)
 
         # Calculate the mass and step-size scales.
-        mass = np.ones(num_params,dtype=np.double)
-        epsilon *= np.sqrt(self.cov[0])
+        mass = np.ones(num_params, dtype=np.double)
+        epsilon *= np.sqrt(self.cov[0, 0])
 
         # Create the LikelihoodArgs.
         args = LikelihoodArgs()
@@ -75,7 +77,7 @@ class MapSampler:
         args.ny = self.N.shape[1]
         args.nz = self.N.shape[2]
         args.mu = self.mu
-        args.inv_cov = self.inv_cov.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        args.inv_cov = self.inv_cov.ravel().ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         args.expected_N = self.expected_N
 
         print('About to run that MOFO!')
@@ -90,12 +92,13 @@ class MapSampler:
         print(results.accept_rate)
 
         chain = np.array([[results.samples[i][j] for j in range(num_params)]
-                            for i in range(num_samps)])
+                          for i in range(num_samps)])
 
         likelihoods = np.array([results.log_likelihoods[i]
-                               for i in range(num_samps)])
+                                for i in range(num_samps)])
 
         return chain, likelihoods
+
 
 def compute_neighbor_covariances(y_map, f_map):
     """Wrapper function to call the cython code."""
@@ -176,7 +179,8 @@ def compute_neighbor_covariances_N(N_map, y_map, f_map):
     """Wrapper function to call the cython code."""
     return compute_neighbor_covariances_N_c(N_map, y_map, f_map)
 
-cdef np.ndarray compute_neighbor_covariances_N_c(np.ndarray N_map, np.ndarray y_map, np.ndarray f_map):
+cdef np.ndarray compute_neighbor_covariances_N_c(np.ndarray N_map, np.ndarray y_map,
+                                                 np.ndarray f_map):
     """Computes the covariances of y-values for face, edge, and corner neighbors."""
 
     # Get the shape of the array.
@@ -304,7 +308,7 @@ cdef np.ndarray compute_neighbor_covariances_N_at_z_c(np.ndarray N_map, np.ndarr
                                 # and has reasonable occupancy.
                                 if 0 <= i + a < nx and 0 <= j + b < ny and 0 <= k + c < nz \
                                         and f_map[i + a, j + b, k + c] > 0.5 \
-                                        and slice_inds[i +a, j + b, k + c]:
+                                        and slice_inds[i + a, j + b, k + c]:
 
                                     # Check if is self, face, edge, or corner neighbor
                                     # and add to the appropriate sum.
