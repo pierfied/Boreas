@@ -82,7 +82,7 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
                              (box.nx, box.ny, box.nz))
 
     # Create a Poisson realization and calculate observed d and y maps.
-    N_obs = np.random.poisson(expected_N * np.exp(y_true))
+    N_obs = np.random.poisson(expected_N * np.exp(y_true)).astype(np.double)
     d_obs = N_obs / expected_N - 1
     y_obs = np.log(1 + d_obs)
     y_obs = np.clip(y_obs, -6, 6)
@@ -102,13 +102,13 @@ var = 0.1
 expected_N = 2.
 
 # Sampling params.
-num_samps = 10000
-num_burn = 0
+num_samps = 1000
+num_burn = 100
 num_steps = 10
-epsilon = 1 / 128.
+epsilon = 1 / 32.
 
 box = BoundingBox(0, 0, 0, nvox, nvox, nvox, 1)
-# results = test_diag(box, mu, var, expected_N, num_samps, num_steps, num_burn, epsilon)
+# results = test_diag(box, var, expected_N, num_samps, num_steps, num_burn, epsilon)
 
 cov = var * np.array([1, 0.1, 0.05, 0.01])
 # cov = var * np.array([1, 0, 0, 0])
