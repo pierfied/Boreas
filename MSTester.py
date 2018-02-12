@@ -99,7 +99,7 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
 # Test params.
 nvox = 10
 var = 0.1
-expected_N = 2.
+expected_N = 20.
 
 # Sampling params.
 num_samps = 1000
@@ -124,6 +124,9 @@ y_true = results[2]
 y_obs = results[3]
 
 plt.plot(range(len(logp)), logp)
+plt.xlabel('Sample Number')
+plt.ylabel('log-likelihood')
+plt.title('$\\bar{N}=%d$' % expected_N)
 plt.savefig('logp_%d.png' % expected_N)
 plt.clf()
 
@@ -135,6 +138,8 @@ y_mle = np.array([y[1] for y in c.analysis.get_summary().values()])
 plt.scatter(y_true, y_obs, label='Random')
 plt.scatter(y_true, y_mle, label='HMC MLE')
 plt.plot([-4, 4], [-4, 4], c='k', label='y=x')
+plt.xlim(-2,2)
+plt.ylim(-2,2)
 plt.legend()
 plt.xlabel('y True')
 plt.ylabel('y Sample')
@@ -144,4 +149,5 @@ plt.savefig('comp_%d.png' % expected_N)
 
 unconstrained_inds = [2, 6, 8, 9, 12]
 c.plotter.plot(parameters=unconstrained_inds, truth=y_true.ravel()[unconstrained_inds])
-plt.savefig('unconstrained_contour.png')
+plt.title('$\\bar{N}=%d$')
+plt.savefig('unconstrained_contour_%d.png' % expected_N)
