@@ -18,7 +18,7 @@ class LikelihoodArgs(ctypes.Structure):
                 ('ny', ctypes.c_int),
                 ('nz', ctypes.c_int),
                 ('mu', ctypes.c_double),
-                ('inv_cov', ctypes.POINTER(ctypes.c_double)),
+                ('cov', ctypes.POINTER(ctypes.c_double)),
                 ('expected_N', ctypes.c_double)]
 
 class MapSampler:
@@ -75,7 +75,7 @@ class MapSampler:
         args.ny = self.N.shape[1]
         args.nz = self.N.shape[2]
         args.mu = self.mu
-        args.inv_cov = self.inv_cov.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        args.cov = self.cov.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         args.expected_N = self.expected_N
 
         print('About to run that MOFO!')

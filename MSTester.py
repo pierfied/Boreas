@@ -99,13 +99,13 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
 # Test params.
 nvox = 10
 var = 0.1
-expected_N = 20.
+expected_N = 2.
 
 # Sampling params.
 num_samps = 1000
 num_burn = 100
 num_steps = 10
-epsilon = 1 / 32.
+epsilon = 1 / 8.
 
 box = BoundingBox(0, 0, 0, nvox, nvox, nvox, 1)
 # results = test_diag(box, var, expected_N, num_samps, num_steps, num_burn, epsilon)
@@ -138,8 +138,8 @@ y_mle = np.array([y[1] for y in c.analysis.get_summary().values()])
 plt.scatter(y_true, y_obs, label='Random')
 plt.scatter(y_true, y_mle, label='HMC MLE')
 plt.plot([-4, 4], [-4, 4], c='k', label='y=x')
-plt.xlim(-2,2)
-plt.ylim(-2,2)
+# plt.xlim(-2,2)
+# plt.ylim(-2,2)
 plt.legend()
 plt.xlabel('y True')
 plt.ylabel('y Sample')
