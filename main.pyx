@@ -180,7 +180,7 @@ gen_plot_z_slice(0.4)
 gen_plot_z_slice(0.6)
 gen_plot_z_slice(0.8)
 
-exit(0)
+# exit(0)
 
 # Adjust the delta-map for the redmagic bias.
 # d_map_spec.map /= 1.5
@@ -219,7 +219,6 @@ y_map_truth[f_map_truth.map < 0.5] = y_map_truth[f_map_truth.map > 0.5].mean()
 mu = y_map_truth[f_map_truth.map > 0.5].mean()
 cov = MS.compute_neighbor_covariances(y_map_truth,f_map_truth.map)
 
-print(d_map_truth.expected_N)
 print(mu)
 print(cov)
 print(np.median(y_map_truth[f_map_truth.map > 0.5]))
@@ -263,8 +262,7 @@ plt.title('$f_i > %0.2f$' % thresh)
 plt.savefig('N_map_truth.png')
 plt.clf()
 
-print(d_map_truth.expected_N)
-exit(0)
+# exit(0)
 
 # a,b=NMS.compute_log_prob(y_map_truth,d_map.N,f_map.map,mu,cov,d_map.expected_N)
 # print('Gaussian: ',str(a))
@@ -310,7 +308,10 @@ np.save(open('y_spec.npy','wb'),y_map_spec[f_map_spec.map > 0.5].ravel())
 # DELETE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # cov[1:] = 0
 
-sampler = MS.MapSampler(redmagic_cat,box,d_map_spec.N,f_map_spec,y_map_photo,
+cov = np.array([2.34759732, 0.74527798, 0.37515088, 0.24471967])
+mu = -0.5 * cov[0]
+
+sampler = MS.MapSampler(redmagic_cat,box,d_map_spec.N,f_map_spec.map,y_map_photo,
                         mu, cov, d_map_spec.expected_N)
 
 import pickle

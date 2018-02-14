@@ -76,7 +76,7 @@ class MapSampler:
         args.nz = self.N.shape[2]
         args.mu = self.mu
         args.cov = self.cov.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        args.expected_N = self.expected_N
+        args.expected_N = self.expected_N.ravel()[0]
 
         print('About to run that MOFO!')
 
