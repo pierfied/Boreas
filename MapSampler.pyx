@@ -39,7 +39,13 @@ class MapSampler:
         self.expected_N = expected_N
 
         # Compute the values for the inverse covariance matrix.
+        var = cov[0,0]
+        corr = cov / var
+        ident = np.eye(cov.shape[0])
+        S = corr - ident
+        ainv_cov = (ident - S + np.matmul(S,S)) / var
         self.inv_cov = np.linalg.inv(cov)
+        self.inv_cov = ainv_cov
 
     def sample(self, num_samps, num_steps, num_burn, epsilon):
         # Load the likelihood/sampling library.

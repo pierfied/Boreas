@@ -99,7 +99,7 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
 # Test params.
 nvox = 10
 var = 0.1
-expected_N = 20.
+expected_N = 2.
 
 # Sampling params.
 num_samps = 1000
