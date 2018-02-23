@@ -88,6 +88,7 @@ def test_cov(box, cov, expected_N, num_samps, num_steps, num_burn, epsilon, maks
     y_obs = np.clip(y_obs, -6, 6)
 
     # Sample the map.
+    expected_N = np.array(expected_N)
     mask = np.ones(y_true.shape)
     # y_obs = np.random.standard_normal(y_true.shape)
     ms = MS.MapSampler(None, box, N_obs, mask, y_obs, mu, cov, expected_N)
